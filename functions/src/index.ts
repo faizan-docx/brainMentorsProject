@@ -1,0 +1,126 @@
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import * as nodemailer from 'nodemailer';
+import axios from 'axios';
+
+admin.initializeApp();
+
+// Configure details via environment variables in real app
+const EMAIL_USER = process.env.EMAIL_USER || 'mock@example.com';
+const EMAIL_PASS = process.env.EMAIL_PASS || 'mock-pass';
+const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0/MOCK_ID/messages';
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || 'mock-token';
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // or any service
+  auth: { user: EMAIL_USER, pass: EMAIL_PASS }
+});
+
+export const requestOtp = functions.https.onCall(async (data, context) => {
+  const { email, phone } = data;
+  const otp = Math.floor(1000 + Math.random() * 9000).toString(); // simple 4 digit OTP
+  
+  // 1. Send OTP via email (mocked if not configured)
+  try {
+    await transporter.sendMail({
+      from: '"WorkshopHub" <' + EMAIL_USER + '>',
+      to: email,
+      subject: 'Your WorkshopHub Verification OTP',
+      text: `Your One-Time Password is: ${otp}`
+    });
+  } catch (e) {
+    functions.logger.warn("Failed to send OTP email (likely mock config)", e);
+  }
+
+  // 2. We'd save this OTP to Firestore or Redis with a TTL of 5 mins for verification
+  // For demo, we just return success
+  return { success: true, message: "OTP sent successfully" };
+});
+
+export const onSubmissionCreate = functions.firestore
+  .document('submissions/{docId}')
+  .onCreate(async (snap, context) => {
+    const submission = snap.data();
+    const { name, email, phone, workshopId } = submission;
+
+    functions.logger.info(`Processing certificate for ${name} (${email}) for workshop ${workshopId}`);
+
+    try {
+      // 1. Fetch Workshop Details
+      const workshopSnap = await admin.firestore().collection('workshops').doc(workshopId).get();
+      const workshop = workshopSnap.data();
+
+      if (!workshop) throw new Error("Workshop not found");
+
+      // 2. Generate PDF using pdf-lib
+      // Note: In reality, we fetch a template from Firebase storage. Here we mock generating a blank PDF with text
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([600, 400]);
+      
+      const helveticaFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      // Draw standard certificate text
+      page.drawText('CERTIFICATE OF PARTICIPATION', { x: 100, y: 320, size: 24, font: helveticaFont, color: rgb(0, 0.3, 0.7) });
+      page.drawText('This is proudly presented to', { x: 180, y: 270, size: 14, color: rgb(0, 0, 0) });
+      
+      // Draw student name dynamically
+      page.drawText(name.toUpperCase(), { x: 150, y: 220, size: 30, font: helveticaFont, color: rgb(0.1, 0.1, 0.1) });
+      
+      page.drawText(`For actively participating in: ${workshop.name}`, { x: 100, y: 160, size: 14, color: rgb(0.3, 0.3, 0.3) });
+      page.drawText(`Date: ${workshop.date}`, { x: 100, y: 130, size: 12 });
+      page.drawText(`College: ${workshop.college}`, { x: 300, y: 130, size: 12 });
+
+      const pdfBytes = await pdfDoc.save();
+      const pdfBuffer = Buffer.from(pdfBytes);
+
+      // 3. Save PDF to Firebase Storage
+      const bucket = admin.storage().bucket();
+      const file = bucket.file(`certificates/${workshopId}/${snap.id}.pdf`);
+      await file.save(pdfBuffer, { contentType: 'application/pdf' });
+      await file.makePublic();
+      const certUrl = file.publicUrl();
+
+      // 4. Send Email with PDF Attachment
+      try {
+        await transporter.sendMail({
+          from: '"WorkshopHub" <' + EMAIL_USER + '>',
+          to: email,
+          subject: `Your Certificate for ${workshop.name}`,
+          text: `Hi ${name},\n\nThank you for attending ${workshop.name}. Attached is your certificate of participation.\n\nYou can also view it here: ${certUrl}\n\nBest regards,\nWorkshopHub`,
+          attachments: [
+            {
+              filename: `${name.replace(/\s+/g, '_')}_Certificate.pdf`,
+              content: pdfBuffer,
+              contentType: 'application/pdf'
+            }
+          ]
+        });
+      } catch (e) {
+        functions.logger.warn("Failed to send certificate email", e);
+      }
+
+      // 5. Send WhatsApp Message with PDF
+      try {
+        await axios.post(
+          WHATSAPP_API_URL,
+          {
+            messaging_product: "whatsapp",
+            to: phone,
+            type: "document",
+            document: {
+              link: certUrl,
+              caption: `Hi ${name}! 🎉 Thank you for joining ${workshop.name}. Here is your certificate of participation!`
+            }
+          },
+          { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
+        );
+      } catch (e) {
+        functions.logger.warn("Failed to send WhatsApp message", e);
+      }
+
+    } catch (error) {
+      functions.logger.error("Error generating certificate:", error);
+      throw new functions.https.HttpsError('internal', 'Failed to generate and deliver certificate.');
+    }
+});

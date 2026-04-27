@@ -1,0 +1,6 @@
+﻿src/context/AuthContext.tsx(2,10): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/admin/Dashboard.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/admin/Layout.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/pages/admin/Layout.tsx(4,45): error TS6133: 'Settings' is declared but its value is never read.
+src/pages/StudentForm.tsx(99,16): error TS6133: 'e' is declared but its value is never read.
+src/pages/ThankYou.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
