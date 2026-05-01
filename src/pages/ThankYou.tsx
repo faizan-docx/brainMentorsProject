@@ -46,7 +46,7 @@ export default function ThankYou() {
         <div className="space-y-2 text-muted-foreground">
           <p className="text-lg">Your feedback has been successfully submitted.</p>
           <p className="text-sm">
-            Your personalized certificate is being generated and will be delivered to your Email and WhatsApp shortly.
+            Your personalized certificate is being generated and will be delivered to your Email shortly.
           </p>
         </div>
       </motion.div>

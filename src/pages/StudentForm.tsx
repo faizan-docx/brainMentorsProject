@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import emailjs from '@emailjs/browser';
+import jsPDF from 'jspdf';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -85,8 +86,8 @@ export default function StudentForm() {
 
     try {
       await emailjs.send(
-        "YOUR_SERVICE_ID",
-        "YOUR_TEMPLATE_ID",
+        "service_jy8ltbq",
+        "template_twop72s",
         templateParams,
         "4ojUh-vrb5hduvO6s"
       );
@@ -98,6 +99,41 @@ export default function StudentForm() {
     } finally {
       setOtpLoading(false);
     }
+  };
+
+  const downloadCertificate = (name: string, course: string) => {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("CERTIFICATE OF COMPLETION", 105, 40, { align: "center" });
+
+    // Body
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(14);
+    doc.text("This is to certify that", 105, 60, { align: "center" });
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(name, 105, 75, { align: "center" });
+
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(14);
+    doc.text("has successfully completed", 105, 90, { align: "center" });
+
+    doc.setFont("Helvetica", "bold");
+    doc.text(course, 105, 105, { align: "center" });
+
+    // Footer
+    doc.setFontSize(12);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 130);
+
+    // Border
+    doc.rect(10, 10, 190, 277);
+
+    // 🔥 THIS triggers download
+    doc.save(`${name.replace(/\s+/g, '_')}_certificate.pdf`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,6 +159,21 @@ export default function StudentForm() {
       await updateDoc(wsRef, {
         submissionCount: increment(1)
       }).catch(_e => console.warn("Update count failed..."));
+
+      // Download directly
+      downloadCertificate(formData.name, formData.course);
+
+      // Send simple confirmation email
+      await emailjs.send(
+        "service_jy8ltbq",
+        "template_twop72s",
+        {
+          user_name: formData.name,
+          course_name: formData.course,
+          to_email: formData.email
+        },
+        "4ojUh-vrb5hduvO6s"
+      );
 
       navigate('/thank-you');
     } catch (err: any) {
