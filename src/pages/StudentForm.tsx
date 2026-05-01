@@ -69,8 +69,20 @@ export default function StudentForm() {
     e.preventDefault();
     setOtpLoading(true);
     try {
-      const requestOtpFn = httpsCallable(functions, 'requestOtp');
-      await requestOtpFn({ email: formData.email, phone: formData.phone });
+      const response = await fetch('https://us-central1-brainmentors-3336f.cloudfunctions.net/requestOtp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: formData.email, phone: formData.phone })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send OTP');
+      }
+      
       setOtpStep('verify');
     } catch (err: any) {
       console.error(err);

@@ -3,6 +3,9 @@ import * as admin from 'firebase-admin';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as nodemailer from 'nodemailer';
 import axios from 'axios';
+import cors from 'cors';
+
+const corsHandler = cors({ origin: true });
 
 admin.initializeApp();
 
@@ -17,35 +20,36 @@ const transporter = nodemailer.createTransport({
   auth: { user: EMAIL_USER, pass: EMAIL_PASS }
 });
 
-export const requestOtp = functions.https.onCall(async (data, context) => {
-  const { email, phone } = data;
-  if (!email || !phone) {
-    throw new functions.https.HttpsError('invalid-argument', 'Email and phone are required');
-  }
+export const requestOtp = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
 
-  const otp = Math.floor(1000 + Math.random() * 9000).toString(); // simple 4 digit OTP
-  
-  try {
-    await transporter.sendMail({
-      from: '"WorkshopHub" <' + EMAIL_USER + '>',
-      to: email,
-      subject: 'Your WorkshopHub Verification OTP',
-      text: `Your One-Time Password is: ${otp}`
-    });
-  } catch (e) {
-    functions.logger.warn("Failed to send OTP email (likely mock config)", e);
-  }
+    // ✅ Handle preflight (CORS fix)
+    if (req.method === "OPTIONS") {
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Access-Control-Allow-Methods", "POST");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      return res.status(204).send("");
+    }
 
-  // Save OTP to Firestore with 5 mins TTL
-  const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000);
-  
-  await admin.firestore().collection('otps').doc(email).set({
-    otp,
-    phone,
-    expiresAt
+    try {
+      const { phone, email } = req.body;
+
+      console.log("OTP request:", phone, email);
+
+      // 🔥 TEMP RESPONSE (we'll build real OTP later)
+      return res.status(200).json({
+        success: true,
+        message: "OTP request received"
+      });
+
+    } catch (error: any) {
+      console.error(error);
+      return res.status(500).json({
+        error: error.message
+      });
+    }
+
   });
-
-  return { success: true, message: "OTP sent successfully" };
 });
 
 export const verifyOtp = functions.https.onCall(async (data, context) => {
