@@ -7,7 +7,7 @@
   :root {
     --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
-    --primary: 256 83% 53%;
+    --primary: 243 75% 59%; /* Richer indigo */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -19,14 +19,14 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 256 83% 53%;
+    --ring: 243 75% 59%;
     --radius: 0.75rem;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --primary: 256 83% 65%;
+    --primary: 243 75% 65%;
     --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -38,7 +38,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 256 83% 65%;
+    --ring: 243 75% 65%;
   }
 }
 
@@ -47,10 +47,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
   }
 }
 
 .glass {
-  @apply bg-background/60 backdrop-blur-lg border border-border/50 shadow-sm;
+  @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-xl shadow-black/5 transition-all duration-300;
 }

@@ -12,10 +12,10 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", isLoading, children, disabled, ...props }, ref) => {
     const variants = {
-      default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30",
-      outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+      default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300",
+      outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground hover:shadow-sm transition-all duration-300",
+      ghost: "hover:bg-accent hover:text-accent-foreground transition-all duration-300",
+      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:shadow-destructive/30 hover:-translate-y-0.5 transition-all duration-300",
     };
 
     const sizes = {

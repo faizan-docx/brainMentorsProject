@@ -201,30 +201,40 @@ export default function StudentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden flex items-center justify-center">
       {/* Abstract Background Shapes */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/10 blur-3xl rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-accent/20 blur-3xl rounded-full" />
+        <div className="absolute -top-[10%] -left-[10%] w-[40rem] h-[40rem] bg-primary/20 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-70" />
+        <div className="absolute top-[20%] -right-[10%] w-[35rem] h-[35rem] bg-purple-400/20 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-70" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[40rem] h-[40rem] bg-pink-400/20 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-70" />
       </div>
 
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-2xl mx-auto relative z-10 space-y-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-2xl w-full mx-auto relative z-10 space-y-8"
       >
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground bg-clip-text">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-primary/10 text-primary font-medium text-sm mb-2"
+          >
+            Workshop Feedback
+          </motion.div>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 pb-2">
             {workshop.name}
           </h1>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground font-medium">
-            <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {workshop.college}</div>
-            <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {workshop.date}</div>
-            <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {workshop.time}</div>
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground font-medium pt-2">
+            <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> {workshop.college}</div>
+            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" /> {workshop.date}</div>
+            <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> {workshop.time}</div>
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-8 shadow-xl shadow-indigo-500/10">
+        <div className="glass rounded-3xl p-6 md:p-10 shadow-2xl shadow-primary/5">
           <div className="mb-6 pb-6 border-b border-border">
             <h3 className="font-semibold text-lg mb-2">Instructions</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">{workshop.instructions}</p>

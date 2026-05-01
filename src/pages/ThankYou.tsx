@@ -33,7 +33,7 @@ export default function ThankYou() {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", bounce: 0.5 }}
-        className="glass rounded-3xl p-10 max-w-lg w-full text-center space-y-6 shadow-2xl relative z-10 border-t border-white/20"
+        className="glass rounded-3xl p-8 md:p-12 max-w-lg w-full text-center space-y-6 shadow-2xl relative z-10 border-t border-white/20"
       >
         <div className="mx-auto bg-gradient-to-tr from-green-400 to-emerald-500 w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/30">
           <PartyPopper className="w-10 h-10 text-white" />
@@ -43,10 +43,10 @@ export default function ThankYou() {
           Thank You!
         </h1>
         
-        <div className="space-y-2 text-muted-foreground">
-          <p className="text-lg">Your feedback has been successfully submitted.</p>
-          <p className="text-sm">
-            Your personalized certificate is being generated and will be delivered to your Email shortly.
+        <div className="space-y-3 text-muted-foreground">
+          <p className="text-lg text-foreground font-medium">Your feedback has been successfully submitted.</p>
+          <p className="text-sm leading-relaxed">
+            Your personalized certificate has been downloaded to your device, and a confirmation has been sent to your email.
           </p>
         </div>
       </motion.div>
