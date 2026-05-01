@@ -9,21 +9,21 @@ import ThankYou from './pages/ThankYou';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-background font-sans text-foreground">
+      <div className="min-h-screen bg-background ont-sans text-foreground">
         <Routes>
           {/* Public / Student Routes */}
           <Route path="/f/:formId" element={<StudentForm />} />
           <Route path="/thank-you" element={<ThankYou />} />
-          
+
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          
+
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="builder/:id?" element={<FormBuilder />} />
           </Route>
-          
+
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
