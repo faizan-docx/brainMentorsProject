@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -67,24 +68,26 @@ export default function StudentForm() {
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtpLoading(true);
-    // Simulate Cloud Function call for OTP
-    setTimeout(() => {
-      setOtpLoading(false);
+    try {
+      const requestOtpFn = httpsCallable(functions, 'requestOtp');
+      await requestOtpFn({ email: formData.email, phone: formData.phone });
       setOtpStep('verify');
-    }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Failed to send OTP');
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate dummy OTP
-    if (otpValue !== '1234') {
-      alert("Invalid OTP. Try '1234'");
-      return;
-    }
-
     setSubmitLoading(true);
+
     try {
+      const verifyOtpFn = httpsCallable(functions, 'verifyOtp');
+      await verifyOtpFn({ email: formData.email, otp: otpValue });
+
       // Add submission
       await addDoc(collection(db, 'submissions'), {
         workshopId: workshop.id,
@@ -96,13 +99,12 @@ export default function StudentForm() {
       const wsRef = doc(db, 'workshops', workshop.id);
       await updateDoc(wsRef, {
         submissionCount: increment(1)
-      }).catch(_e => console.warn("Mocking update..."));
+      }).catch(_e => console.warn("Update count failed..."));
 
       navigate('/thank-you');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      // Simulate success if Firebase errors due to mock
-      setTimeout(() => navigate('/thank-you'), 1000);
+      alert(err.message || "Invalid OTP. Please try again.");
     } finally {
       setSubmitLoading(false);
     }
@@ -227,7 +229,7 @@ export default function StudentForm() {
                 <div className="max-w-xs mx-auto space-y-4">
                   <Input 
                     type="text" 
-                    placeholder="Enter 4-digit OTP (Try '1234')" 
+                    placeholder="Enter 4-digit OTP" 
                     value={otpValue} 
                     onChange={(e) => setOtpValue(e.target.value)} 
                     className="text-center text-lg tracking-widest"

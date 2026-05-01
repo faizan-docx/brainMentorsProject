@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../lib/firebase';
 import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { ArrowLeft, Copy, CheckCircle2, Link as LinkIcon, Save } from 'lucide-react';
+import { ArrowLeft, Copy, CheckCircle2, Link as LinkIcon, Save, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function FormBuilder() {
@@ -13,6 +14,8 @@ export default function FormBuilder() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [uploadingTemplate, setUploadingTemplate] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -21,6 +24,7 @@ export default function FormBuilder() {
     time: '',
     instructions: '',
     status: false,
+    templateUrl: '',
   });
 
   useEffect(() => {
@@ -58,12 +62,23 @@ export default function FormBuilder() {
     setLoading(true);
     try {
       const formId = id || generateId();
+      let uploadedTemplateUrl = formData.templateUrl;
+
+      if (templateFile) {
+        setUploadingTemplate(true);
+        const templateRef = ref(storage, `templates/${formId}/${templateFile.name}`);
+        await uploadBytes(templateRef, templateFile);
+        uploadedTemplateUrl = await getDownloadURL(templateRef);
+        setUploadingTemplate(false);
+      }
+
       await setDoc(doc(db, 'workshops', formId), {
         ...formData,
+        templateUrl: uploadedTemplateUrl,
         submissionCount: formData.name ? 0 : 0, // mock existing
         updatedAt: serverTimestamp(),
         ...(!id && { createdAt: serverTimestamp() })
-      });
+      }, { merge: true });
       navigate('/admin/dashboard');
     } catch (error) {
       console.error("Error saving form", error);
@@ -144,6 +159,30 @@ export default function FormBuilder() {
                     required 
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4">
+              <h2 className="text-xl font-semibold border-b border-border pb-2">Certificate Template</h2>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Upload PDF Template (Optional)</label>
+                <div className="flex items-center gap-4">
+                  <Input 
+                    type="file" 
+                    accept="application/pdf"
+                    onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
+                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                  />
+                </div>
+                {formData.templateUrl && !templateFile && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Current template uploaded. Uploading a new one will replace it.
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  The system will automatically stamp the student's name in the center of the PDF.
+                </p>
               </div>
             </div>
 

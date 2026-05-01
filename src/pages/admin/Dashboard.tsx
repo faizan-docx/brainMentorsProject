@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, getDocs, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Calendar, ArrowRight, ExternalLink } from 'lucide-react';
+import { Plus, Users, Calendar, ArrowRight, ExternalLink, Download } from 'lucide-react';
 
 interface Workshop {
   id: string;
@@ -50,6 +50,53 @@ export default function AdminDashboard() {
 
     return unsubscribe;
   }, []);
+
+  const handleExportCSV = async (workshopId: string, workshopName: string) => {
+    try {
+      const q = query(collection(db, 'submissions'), where('workshopId', '==', workshopId));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        alert("No submissions found for this workshop.");
+        return;
+      }
+
+      const rows = [
+        ['Name', 'Email', 'Phone', 'Course', 'Feedback', 'Submitted At'] // Header
+      ];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const dateStr = data.submittedAt ? new Date(data.submittedAt.toMillis()).toLocaleString() : 'Unknown';
+        
+        // Escape quotes and wrap in quotes to handle commas in feedback
+        const escapeCSV = (str: string) => `"${(str || '').replace(/"/g, '""')}"`;
+
+        rows.push([
+          escapeCSV(data.name),
+          escapeCSV(data.email),
+          escapeCSV(data.phone),
+          escapeCSV(data.course),
+          escapeCSV(data.feedback),
+          escapeCSV(dateStr)
+        ]);
+      });
+
+      const csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${workshopName.replace(/\s+/g, '_')}_Submissions.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      alert("Failed to export data.");
+    }
+  };
 
   if (loading) return <div className="animate-pulse flex space-x-4">Loading workshops...</div>;
 
@@ -127,6 +174,13 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleExportCSV(workshop.id, workshop.name)}
+                    className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                    title="Export CSV"
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
                   <Link 
                     to={`/admin/builder/${workshop.id}`}
                     className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
