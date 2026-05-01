@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import emailjs from '@emailjs/browser';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -29,6 +29,7 @@ export default function StudentForm() {
   const [otpValue, setOtpValue] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState('');
 
   useEffect(() => {
     const fetchWorkshop = async () => {
@@ -68,25 +69,32 @@ export default function StudentForm() {
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtpLoading(true);
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+
+    // Optional Expiry (2 mins)
+    setTimeout(() => {
+      setGeneratedOtp('');
+    }, 2 * 60 * 1000);
+
+    const templateParams = {
+      to_email: formData.email,
+      otp: otp,
+    };
+
     try {
-      const response = await fetch('https://us-central1-brainmentors-3336f.cloudfunctions.net/requestOtp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email: formData.email, phone: formData.phone })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send OTP');
-      }
+      await emailjs.send(
+        "YOUR_SERVICE_ID",
+        "YOUR_TEMPLATE_ID",
+        templateParams,
+        "4ojUh-vrb5hduvO6s"
+      );
       
       setOtpStep('verify');
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Failed to send OTP');
+      alert('Failed to send OTP via EmailJS. Check console.');
     } finally {
       setOtpLoading(false);
     }
@@ -94,12 +102,15 @@ export default function StudentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (otpValue !== generatedOtp || !generatedOtp) {
+      alert("Invalid OTP or OTP has expired ❌");
+      return;
+    }
+
     setSubmitLoading(true);
 
     try {
-      const verifyOtpFn = httpsCallable(functions, 'verifyOtp');
-      await verifyOtpFn({ email: formData.email, otp: otpValue });
-
       // Add submission
       await addDoc(collection(db, 'submissions'), {
         workshopId: workshop.id,
@@ -116,7 +127,7 @@ export default function StudentForm() {
       navigate('/thank-you');
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Invalid OTP. Please try again.");
+      alert(err.message || "Something went wrong saving your submission.");
     } finally {
       setSubmitLoading(false);
     }
@@ -241,11 +252,11 @@ export default function StudentForm() {
                 <div className="max-w-xs mx-auto space-y-4">
                   <Input 
                     type="text" 
-                    placeholder="Enter 4-digit OTP" 
+                    placeholder="Enter 6-digit OTP" 
                     value={otpValue} 
                     onChange={(e) => setOtpValue(e.target.value)} 
                     className="text-center text-lg tracking-widest"
-                    maxLength={4}
+                    maxLength={6}
                     required 
                   />
                   
