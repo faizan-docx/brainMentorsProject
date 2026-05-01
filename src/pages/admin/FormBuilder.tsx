@@ -6,7 +6,7 @@ import { db, storage } from '../../lib/firebase';
 import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { ArrowLeft, Copy, CheckCircle2, Link as LinkIcon, Save, Upload } from 'lucide-react';
+import { ArrowLeft, Copy, CheckCircle2, Link as LinkIcon, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function FormBuilder() {
@@ -14,10 +14,7 @@ export default function FormBuilder() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [templateFile, setTemplateFile] = useState<File | null>(null);
-  const [uploadingTemplate, setUploadingTemplate] = useState(false);
-  
-  const [formData, setFormData] = useState({
+  const [templateFile, setTemplateFile] = useState<File | null>(null);  const [formData, setFormData] = useState({
     name: '',
     college: '',
     date: '',
@@ -65,11 +62,9 @@ export default function FormBuilder() {
       let uploadedTemplateUrl = formData.templateUrl;
 
       if (templateFile) {
-        setUploadingTemplate(true);
         const templateRef = ref(storage, `templates/${formId}/${templateFile.name}`);
         await uploadBytes(templateRef, templateFile);
         uploadedTemplateUrl = await getDownloadURL(templateRef);
-        setUploadingTemplate(false);
       }
 
       await setDoc(doc(db, 'workshops', formId), {
@@ -97,7 +92,7 @@ export default function FormBuilder() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto space-y-6"
@@ -121,42 +116,42 @@ export default function FormBuilder() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Workshop Name</label>
-                  <Input 
-                    name="name" 
-                    value={formData.name} 
-                    onChange={handleChange} 
-                    placeholder="e.g. Advanced React Patterns" 
-                    required 
+                  <Input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="e.g. Advanced React Patterns"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">College Name</label>
-                  <Input 
-                    name="college" 
-                    value={formData.college} 
-                    onChange={handleChange} 
-                    placeholder="e.g. Tech University" 
-                    required 
+                  <Input
+                    name="college"
+                    value={formData.college}
+                    onChange={handleChange}
+                    placeholder="e.g. Tech University"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date</label>
-                  <Input 
-                    name="date" 
-                    type="date" 
-                    value={formData.date} 
-                    onChange={handleChange} 
-                    required 
+                  <Input
+                    name="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
-                  <Input 
-                    name="time" 
-                    type="time" 
-                    value={formData.time} 
-                    onChange={handleChange} 
-                    required 
+                  <Input
+                    name="time"
+                    type="time"
+                    value={formData.time}
+                    onChange={handleChange}
+                    required
                   />
                 </div>
               </div>
@@ -167,8 +162,8 @@ export default function FormBuilder() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Upload PDF Template (Optional)</label>
                 <div className="flex items-center gap-4">
-                  <Input 
-                    type="file" 
+                  <Input
+                    type="file"
                     accept="application/pdf"
                     onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
                     className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
@@ -190,7 +185,7 @@ export default function FormBuilder() {
               <h2 className="text-xl font-semibold border-b border-border pb-2">Instructions</h2>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Instructions for Students</label>
-                <textarea 
+                <textarea
                   name="instructions"
                   value={formData.instructions}
                   onChange={handleChange}
@@ -216,27 +211,27 @@ export default function FormBuilder() {
         <div className="space-y-6">
           <div className="glass rounded-xl p-6 shadow-sm space-y-6">
             <h2 className="text-xl font-semibold border-b border-border pb-2">Status & Link</h2>
-            
+
             <label className="flex items-center justify-between p-4 border border-border rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
               <div>
                 <div className="font-semibold text-foreground">Active Status</div>
                 <div className="text-sm text-muted-foreground">Allow submissions</div>
               </div>
               <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   name="status"
-                  id="toggle" 
+                  id="toggle"
                   checked={formData.status}
                   onChange={handleChange}
-                  className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-muted peer focus:ring-0 checked:bg-white checked:right-0 checked:border-primary transition-all z-10" 
+                  className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-muted peer focus:ring-0 checked:bg-white checked:right-0 checked:border-primary transition-all z-10"
                 />
                 <label htmlFor="toggle" className={`toggle-label block overflow-hidden h-6 rounded-full bg-muted cursor-pointer transition-colors peer-checked:bg-primary`}></label>
               </div>
             </label>
 
             {formData.status && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="space-y-3 pt-2"
@@ -245,7 +240,7 @@ export default function FormBuilder() {
                 <div className="flex items-center gap-2 p-3 bg-secondary/80 rounded-lg border border-border/50">
                   <LinkIcon className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-sm text-muted-foreground truncate w-full">{formLink}</span>
-                  <button 
+                  <button
                     onClick={copyLink}
                     className="p-1.5 hover:bg-background rounded-md transition-colors shrink-0 text-primary"
                     title="Copy Link"
