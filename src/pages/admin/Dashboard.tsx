@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { collection, query, orderBy, onSnapshot, getDocs, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Calendar, ArrowRight, ExternalLink, Download } from 'lucide-react';
+import { Plus, Users, Calendar, ArrowRight, ExternalLink, Download, MapPin, Edit } from 'lucide-react';
 
 interface Workshop {
   id: string;
@@ -21,14 +21,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     // In a real app we'd fetch from actual collections. Using mock static data if Firebase is unconfigured.
     const q = query(collection(db, 'workshops'), orderBy('createdAt', 'desc'));
-    
+
     // Subscribe to real-time updates
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Workshop[];
-      
+
       // If no data, use mock
       if (data.length === 0) {
         setWorkshops([
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     try {
       const q = query(collection(db, 'submissions'), where('workshopId', '==', workshopId));
       const querySnapshot = await getDocs(q);
-      
+
       if (querySnapshot.empty) {
         alert("No submissions found for this workshop.");
         return;
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         const dateStr = data.submittedAt ? new Date(data.submittedAt.toMillis()).toLocaleString() : 'Unknown';
-        
+
         // Escape quotes and wrap in quotes to handle commas in feedback
         const escapeCSV = (str: string) => `"${(str || '').replace(/"/g, '""')}"`;
 
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
   if (loading) return <div className="animate-pulse flex space-x-4">Loading workshops...</div>;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
@@ -111,8 +111,8 @@ export default function AdminDashboard() {
           <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Overview of your workshop operations.</p>
         </div>
-        <Link 
-          to="/admin/builder" 
+        <Link
+          to="/admin/builder"
           className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
         >
           <Plus className="w-5 h-5" />
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="glass rounded-xl p-6 flex flex-col justify-between shadow-sm">
           <div className="flex items-center gap-3 text-muted-foreground mb-4">
             <Calendar className="w-5 h-5" />
@@ -153,46 +153,50 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1 }}
               key={workshop.id}
-              className="glass rounded-xl p-5 flex items-center justify-between group hover:border-primary/50 transition-colors"
+              className="glass rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary/50 transition-colors"
             >
-              <div className="flex items-center gap-6">
-                <div className={`w-3 h-3 rounded-full ${workshop.status ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-destructive'}`} />
-                <div>
-                  <h3 className="font-semibold text-lg">{workshop.name}</h3>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                    <span>{workshop.college}</span>
-                    <span className="w-1 h-1 rounded-full bg-border" />
-                    <span>{workshop.date}</span>
+              <div className="flex items-start md:items-center gap-4 md:gap-6 w-full md:w-auto">
+                <div className={`mt-1.5 md:mt-0 flex-shrink-0 w-3 h-3 rounded-full ${workshop.status ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-destructive'}`} />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg md:text-xl leading-tight">{workshop.name}</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground mt-2">
+                    <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {workshop.college}</span>
+                    <span className="hidden sm:block w-1 h-1 rounded-full bg-border" />
+                    <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {workshop.date}</span>
                   </div>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <span className="block text-2xl font-bold">{workshop.submissionCount}</span>
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Responses</span>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between md:justify-end gap-6 w-full md:w-auto border-t border-border/50 md:border-t-0 pt-4 md:pt-0">
+                <div className="flex items-baseline gap-2 md:block md:text-right">
+                  <span className="block text-3xl md:text-2xl font-bold text-foreground">{workshop.submissionCount}</span>
+                  <span className="text-sm md:text-xs text-muted-foreground uppercase tracking-wider font-medium">Responses</span>
                 </div>
-                
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+
+                <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto">
+                  <button
                     onClick={() => handleExportCSV(workshop.id, workshop.name)}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all active:scale-95 font-medium"
                     title="Export CSV"
                   >
                     <Download className="w-5 h-5" />
+                    <span className="sm:hidden text-sm">Export</span>
                   </button>
-                  <Link 
+                  <Link
                     to={`/admin/builder/${workshop.id}`}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all active:scale-95 shadow-md shadow-primary/20 font-medium"
                   >
-                    Edit
+                    <Edit className="w-4 h-4" />
+                    <span className="text-sm">Edit</span>
                   </Link>
-                  <Link 
+                  <Link
                     to={`/f/${workshop.id}`}
                     target="_blank"
-                    className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg transition-all active:scale-95 font-medium"
+                    title="Open Live Form"
                   >
                     <ExternalLink className="w-5 h-5" />
+                    <span className="sm:hidden text-sm">Open</span>
                   </Link>
                 </div>
               </div>
